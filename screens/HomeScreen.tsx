@@ -1,22 +1,110 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import GridPattern from '../components/GridPattern';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  
+  // Create animated particles
+  const [particles] = useState(() => {
+    return Array(30).fill(0).map((_, i) => ({
+      position: {
+        x: new Animated.Value(Math.random() * 300),
+        y: new Animated.Value(Math.random() * 600)
+      },
+      scale: new Animated.Value(0.5 + Math.random()),
+      opacity: new Animated.Value(0.3 + Math.random() * 0.7),
+      color: `rgba(255,255,255,${0.2 + Math.random() * 0.3})`,
+      size: 4 + Math.random() * 4
+    }));
+  });
+
+  // Animate particles
+  useEffect(() => {
+    const animations = particles.map((particle, i) => {
+      return Animated.loop(
+        Animated.parallel([
+          Animated.timing(particle.position.x, {
+            toValue: Math.random() * 300,
+            duration: 3000 + Math.random() * 5000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(particle.position.y, {
+            toValue: Math.random() * 600,
+            duration: 4000 + Math.random() * 5000,
+            useNativeDriver: false,
+          }),
+          Animated.sequence([
+            Animated.timing(particle.scale, {
+              toValue: 1.5,
+              duration: 1000,
+              useNativeDriver: false,
+            }),
+            Animated.timing(particle.scale, {
+              toValue: 0.8,
+              duration: 1500,
+              useNativeDriver: false,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(particle.opacity, {
+              toValue: 0.3,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+            Animated.timing(particle.opacity, {
+              toValue: 0.8,
+              duration: 2000,
+              useNativeDriver: false,
+            }),
+          ]),
+        ])
+      );
+    });
+
+    animations.forEach(anim => anim.start());
+
+    return () => animations.forEach(anim => anim.stop());
+  }, []);
 
   return (
-    <LinearGradient
-      colors={['#f0e6ff', '#e6d9ff', '#d9c3ff']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#f0e6ff', '#e6d9ff', '#d9c3ff']}
+        style={StyleSheet.absoluteFill}
+      />
+      
+      <GridPattern 
+        width="100%" 
+        height="100%" 
+        spacing={40} 
+        color="rgba(180, 160, 255, 0.2)" 
+      />
+      
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          {/* Sparkle elements */}
-          <View style={[styles.sparkle, { top: '10%', right: '15%' }]} />
-          <View style={[styles.sparkle, { bottom: '30%', left: '10%' }]} />
+          {/* Animated particles */}
+          {particles.map((particle, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                styles.particle,
+                {
+                  top: particle.position.y,
+                  left: particle.position.x,
+                  width: particle.size,
+                  height: particle.size,
+                  borderRadius: particle.size / 2,
+                  transform: [{ scale: particle.scale }],
+                  backgroundColor: particle.color,
+                  opacity: particle.opacity
+                }
+              ]}
+            />
+          ))}
           
           {/* AI Bot Avatar */}
           <View style={styles.botAvatarContainer}>
@@ -60,13 +148,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: 'relative',
   },
   safeArea: {
     flex: 1,
@@ -77,13 +166,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
-  sparkle: {
+  particle: {
     position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'white',
-    opacity: 0.8,
   },
   botAvatarContainer: {
     alignItems: 'center',
